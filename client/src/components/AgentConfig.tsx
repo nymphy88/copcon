@@ -30,10 +30,13 @@ export function AgentConfig() {
   // Form state defaults
   const [formData, setFormData] = useState<Partial<InsertAgent>>({
     name: "",
+    role: "",
+    task: "",
     systemPrompt: "You are a helpful assistant.",
     provider: "openai",
     model: "gpt-4o",
     temperature: 70,
+    inputScope: 2,
     color: "#3b82f6",
     isModerator: false
   });
@@ -41,10 +44,13 @@ export function AgentConfig() {
   const resetForm = () => {
     setFormData({
       name: "",
+      role: "",
+      task: "",
       systemPrompt: "You are a helpful assistant.",
       provider: "openai",
       model: "gpt-4o",
       temperature: 70,
+      inputScope: 2,
       color: "#3b82f6",
       isModerator: false
     });
@@ -57,10 +63,13 @@ export function AgentConfig() {
     // Ensure all required fields are present for InsertAgent
     const payload = {
       name: formData.name,
+      role: formData.role || "",
+      task: formData.task || "",
       systemPrompt: formData.systemPrompt,
       provider: formData.provider || "openai",
       model: formData.model || "gpt-4o",
       temperature: formData.temperature || 70,
+      inputScope: formData.inputScope || 2,
       color: formData.color || "#3b82f6",
       isModerator: formData.isModerator || false
     } as InsertAgent;
@@ -84,7 +93,18 @@ export function AgentConfig() {
 
   const handleEdit = (agent: Agent) => {
     setEditingAgent(agent);
-    setFormData(agent);
+    setFormData({
+      name: agent.name,
+      role: agent.role || "",
+      task: agent.task || "",
+      systemPrompt: agent.systemPrompt,
+      provider: agent.provider,
+      model: agent.model,
+      temperature: agent.temperature || 70,
+      inputScope: agent.inputScope || 2,
+      color: agent.color || "#3b82f6",
+      isModerator: agent.isModerator || false
+    });
     setIsSheetOpen(true);
   };
 
@@ -109,6 +129,35 @@ export function AgentConfig() {
                   value={formData.name} 
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                   placeholder="e.g. Logic Master" 
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Role / Identity</label>
+                <Input 
+                  value={formData.role} 
+                  onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value }))}
+                  placeholder="e.g. Senior Architect, Security Auditor" 
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Specific Task</label>
+                <Input 
+                  value={formData.task} 
+                  onChange={(e) => setFormData(prev => ({ ...prev, task: e.target.value }))}
+                  placeholder="e.g. Analyze risks, Propose alternatives" 
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  Input Scope (Last N Messages): {formData.inputScope}
+                </label>
+                <Slider 
+                  value={[formData.inputScope || 2]} 
+                  onValueChange={([val]) => setFormData(prev => ({ ...prev, inputScope: val }))}
+                  min={1} max={10} step={1} 
                 />
               </div>
 
@@ -216,6 +265,7 @@ export function AgentConfig() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-sm">{agent.name}</h3>
+                    <p className="text-[10px] text-primary/80 font-medium">{agent.role}</p>
                     <p className="text-xs text-muted-foreground font-mono">{agent.model}</p>
                   </div>
                 </div>

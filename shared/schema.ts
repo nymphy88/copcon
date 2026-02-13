@@ -9,7 +9,7 @@ import { z } from "zod";
 export const conversations = pgTable("conversations", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
-  goal: text("goal").default(""), // Main Goal
+  goal: text("goal").default(""), // Main Goal / Briefing
   isActive: boolean("is_active").default(true),
   autoMode: boolean("auto_mode").default(false), // Auto Mode toggle
   autoDelay: integer("auto_delay").default(2000), // Delay in ms
@@ -19,10 +19,13 @@ export const conversations = pgTable("conversations", {
 export const agents = pgTable("agents", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
+  role: text("role").default(""), // Role/Identity (e.g. "Senior Architect")
+  task: text("task").default(""), // Specific Task (e.g. "Review system weaknesses")
   systemPrompt: text("system_prompt").notNull(),
   provider: text("provider").notNull(), // 'openai', 'anthropic', 'gemini'
   model: text("model").notNull(),
   temperature: integer("temperature").default(70), // stored as 0-100
+  inputScope: integer("input_scope").default(2), // Number of messages to see (1, 2, 5, etc.)
   color: text("color").default("#3b82f6"), // Visual distinction
   isModerator: boolean("is_moderator").default(false), // Is this agent the moderator?
   createdAt: timestamp("created_at").defaultNow(),
@@ -35,7 +38,7 @@ export const messages = pgTable("messages", {
   role: text("role").notNull(), // 'user', 'assistant', 'system'
   content: text("content").notNull(),
   parentId: integer("parent_id"), // For threading/turns
-  isHidden: boolean("is_hidden").default(false), // Scoping: hidden from AI context but visible to user? Or internal logs
+  isHidden: boolean("is_hidden").default(false), // Scoping: hidden from AI context
   turnOrder: integer("turn_order").default(0),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -88,6 +91,7 @@ export type InsertAgent = z.infer<typeof insertAgentSchema>;
 export type Message = typeof messages.$inferSelect & {
   agentName?: string;
   agentColor?: string;
+  agentRole?: string;
 };
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
 
@@ -97,7 +101,7 @@ export type Log = typeof logs.$inferSelect;
 export type CreateConversationRequest = {
   title: string;
   goal?: string;
-  agentIds: number[]; // Initial agents to include in the loop? Or maybe just global config
+  agentIds: number[];
 };
 
 export type ConversationResponse = Conversation & {
@@ -106,10 +110,11 @@ export type ConversationResponse = Conversation & {
 
 export type RunTurnRequest = {
   conversationId: number;
-  agentId?: number; // Manual trigger specific agent
-  userInput?: string; // If user input is providing the "next turn" content
-  isRewrite?: boolean; // If true, we are rewriting the last message
+  agentId?: number;
+  userInput?: string;
+  isRewrite?: boolean;
   messageIdToRewrite?: number;
+  newContent?: string;
 };
 
 export type AgentConfigResponse = Agent[];

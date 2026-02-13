@@ -112,43 +112,77 @@ export function ChatInterface({ conversationId }: ChatInterfaceProps) {
   return (
     <div className="flex-1 flex flex-col h-full bg-background relative overflow-hidden">
       {/* Header */}
-      <div className="p-4 border-b border-white/5 flex items-center justify-between glass-panel z-10">
-        <div className="flex flex-col gap-1 w-full max-w-2xl">
-          <h2 className="font-bold text-lg leading-none">{conversationData.title}</h2>
-          <Input 
-            className="h-8 bg-transparent border-transparent hover:border-white/10 focus:border-primary/50 text-muted-foreground px-0 transition-all"
-            placeholder="Set a main goal for the agents..."
-            value={goal}
-            onChange={(e) => setGoal(e.target.value)}
-            onBlur={handleGoalBlur}
-          />
+      <div className="p-4 border-b border-white/5 flex flex-col gap-4 glass-panel z-10">
+        <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-1 w-full max-w-2xl">
+            <h2 className="font-bold text-lg leading-none">{conversationData.title}</h2>
+            <div className="flex items-center gap-2 mt-2">
+              <Badge variant="secondary" className="bg-primary/20 text-primary border-primary/20 text-[10px] py-0">BRIEFING / MAIN GOAL</Badge>
+              <Input 
+                className="h-8 bg-black/20 border-white/10 hover:border-white/20 focus:border-primary/50 text-foreground px-3 transition-all rounded-lg text-sm"
+                placeholder="Set the briefing that all agents will follow..."
+                value={goal}
+                onChange={(e) => setGoal(e.target.value)}
+                onBlur={handleGoalBlur}
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+             <div className="flex items-center gap-2 bg-black/20 rounded-full px-3 py-1 border border-white/5">
+              <span className="text-xs text-muted-foreground whitespace-nowrap">Delay (ms)</span>
+              <Input 
+                type="number" 
+                className="w-16 h-6 text-xs bg-transparent border-none text-right p-0 focus-visible:ring-0"
+                value={autoDelay}
+                onChange={(e) => setAutoDelay(parseInt(e.target.value))}
+                onBlur={() => updateConversation.mutate({ id: conversationId, autoDelay })}
+              />
+             </div>
+
+             <Button 
+               variant={conversationData.autoMode ? "destructive" : "default"} 
+               size="sm"
+               onClick={toggleAutoMode}
+               className={`gap-2 transition-all ${conversationData.autoMode ? "animate-pulse shadow-[0_0_15px_rgba(239,68,68,0.5)]" : "shadow-lg shadow-primary/20"}`}
+             >
+               {conversationData.autoMode ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+               {conversationData.autoMode ? "Stop Auto" : "Start Auto"}
+             </Button>
+
+             <Button variant="outline" size="icon" onClick={() => setIsLogOpen(true)} title="View Logs">
+               <Activity className="h-4 w-4" />
+             </Button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3">
-           <div className="flex items-center gap-2 bg-black/20 rounded-full px-3 py-1 border border-white/5">
-            <span className="text-xs text-muted-foreground whitespace-nowrap">Delay (ms)</span>
-            <Input 
-              type="number" 
-              className="w-16 h-6 text-xs bg-transparent border-none text-right p-0 focus-visible:ring-0"
-              value={autoDelay}
-              onChange={(e) => setAutoDelay(parseInt(e.target.value))}
-              onBlur={() => updateConversation.mutate({ id: conversationId, autoDelay })}
-            />
-           </div>
-
-           <Button 
-             variant={conversationData.autoMode ? "destructive" : "default"} 
-             size="sm"
-             onClick={toggleAutoMode}
-             className={`gap-2 transition-all ${conversationData.autoMode ? "animate-pulse shadow-[0_0_15px_rgba(239,68,68,0.5)]" : "shadow-lg shadow-primary/20"}`}
-           >
-             {conversationData.autoMode ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-             {conversationData.autoMode ? "Stop Auto" : "Start Auto"}
-           </Button>
-
-           <Button variant="outline" size="icon" onClick={() => setIsLogOpen(true)} title="View Logs">
-             <Activity className="h-4 w-4" />
-           </Button>
+        {/* Timeline / Queue View */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest shrink-0">Timeline / Queue:</span>
+          {agents?.map((agent, i) => {
+            const isTarget = selectedNextAgent !== "auto" ? parseInt(selectedNextAgent) === agent.id : (i === (conversationData.messages?.length || 0) % agents.length);
+            const isProcessing = runTurn.isPending && isTarget;
+            
+            return (
+              <div key={agent.id} className="flex items-center shrink-0">
+                <div 
+                  className={`flex items-center gap-2 px-2 py-1 rounded-md border text-[10px] font-medium transition-all
+                    ${isProcessing 
+                      ? "border-primary bg-primary/20 shadow-[0_0_15px_rgba(59,130,246,0.5)] scale-110 ring-1 ring-primary/50 animate-pulse" 
+                      : isTarget && !runTurn.isPending
+                        ? "border-primary/40 bg-primary/5 opacity-100"
+                        : "border-white/5 bg-white/5 opacity-40"}`}
+                >
+                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: agent.color }} />
+                  <div className="flex flex-col">
+                    <span>{agent.name}</span>
+                    {agent.role && <span className="text-[8px] opacity-70 leading-none">{agent.role}</span>}
+                  </div>
+                </div>
+                {i < (agents.length - 1) && <span className="mx-1 text-muted-foreground/20">→</span>}
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -159,6 +193,7 @@ export function ChatInterface({ conversationId }: ChatInterfaceProps) {
             const isUser = msg.role === "user";
             const agent = agents?.find(a => a.id === msg.agentId);
             const agentColor = agent?.color || "#3b82f6";
+            const isProcessing = runTurn.isPending && (selectedNextAgent !== "auto" ? parseInt(selectedNextAgent) === msg.agentId : true); // Simplification for glow
 
             return (
               <motion.div 
@@ -169,7 +204,7 @@ export function ChatInterface({ conversationId }: ChatInterfaceProps) {
               >
                 {!isUser && (
                   <div 
-                    className="w-8 h-8 rounded-lg flex items-center justify-center text-white mr-3 mt-1 shadow-md shrink-0" 
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center text-white mr-3 mt-1 shadow-md shrink-0 transition-all ${isProcessing && idx === conversationData.messages.length - 1 ? "ring-2 ring-white ring-offset-2 ring-offset-background scale-110 shadow-[0_0_15px_white]" : ""}`} 
                     style={{ backgroundColor: agentColor }}
                   >
                     <Bot className="w-5 h-5" />
@@ -178,17 +213,25 @@ export function ChatInterface({ conversationId }: ChatInterfaceProps) {
                 
                 <div className={`relative max-w-[80%] group`}>
                    <div className="flex items-baseline gap-2 mb-1 px-1">
-                      <span className={`text-xs font-bold ${isUser ? "text-primary ml-auto" : ""}`} style={{ color: !isUser ? agentColor : undefined }}>
-                        {isUser ? "You" : agent?.name || "Unknown Agent"}
-                      </span>
-                      {!isUser && <span className="text-[10px] text-muted-foreground uppercase">{msg.role}</span>}
+                      <div className="flex flex-col">
+                        <span className={`text-xs font-bold ${isUser ? "text-primary ml-auto" : ""}`} style={{ color: !isUser ? agentColor : undefined }}>
+                          {isUser ? "You" : agent?.name || "Unknown Agent"}
+                        </span>
+                        {!isUser && agent?.role && (
+                          <span className="text-[9px] text-muted-foreground font-medium uppercase tracking-tighter">
+                            {agent.role}
+                          </span>
+                        )}
+                      </div>
+                      {!isUser && <span className="text-[10px] text-muted-foreground uppercase self-start mt-0.5">{msg.role}</span>}
                    </div>
                    
                    <div className={`
-                      p-4 rounded-2xl text-sm leading-relaxed shadow-md backdrop-blur-sm border
+                      p-4 rounded-2xl text-sm leading-relaxed shadow-md backdrop-blur-sm border transition-all
                       ${isUser 
                         ? "bg-primary/10 border-primary/20 text-foreground rounded-tr-sm" 
                         : "bg-card/80 border-white/5 text-foreground/90 rounded-tl-sm"}
+                      ${isProcessing && idx === conversationData.messages.length - 1 ? "ring-2 ring-primary/50 scale-[1.01] shadow-[0_0_25px_rgba(59,130,246,0.2)]" : ""}
                    `}>
                       {msg.content}
                    </div>
