@@ -102,6 +102,7 @@ export function AgentConfig() {
       model: agent.model,
       temperature: agent.temperature || 70,
       inputScope: agent.inputScope || 2,
+      maxTokens: agent.maxTokens || 1000,
       color: agent.color || "#3b82f6",
       isModerator: agent.isModerator || false
     });
@@ -158,6 +159,17 @@ export function AgentConfig() {
                   value={[formData.inputScope || 2]} 
                   onValueChange={([val]) => setFormData(prev => ({ ...prev, inputScope: val }))}
                   min={1} max={10} step={1} 
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  Max Output Tokens: {formData.maxTokens}
+                </label>
+                <Slider 
+                  value={[formData.maxTokens || 1000]} 
+                  onValueChange={([val]) => setFormData(prev => ({ ...prev, maxTokens: val }))}
+                  min={100} max={4000} step={100} 
                 />
               </div>
 

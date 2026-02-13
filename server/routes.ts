@@ -98,18 +98,21 @@ export async function registerRoutes(
 
   app.post(api.turns.run.path, async (req, res) => {
     try {
-      const { conversationId, agentId, userInput, isRewrite, messageIdToRewrite, newContent } = api.turns.run.input.parse(req.body);
+      const { conversationId, agentId, userInput, isRewrite, messageIdToRewrite, newContent, fileUrl, fileType, fileName } = api.turns.run.input.parse(req.body);
 
       if (isRewrite && messageIdToRewrite && newContent) {
           const updatedMessage = await storage.updateMessage(messageIdToRewrite, { content: newContent });
           return res.json({ message: updatedMessage });
       }
 
-      if (userInput) {
+      if (userInput || fileUrl) {
         await storage.createMessage({
           conversationId,
           role: "user",
-          content: userInput,
+          content: userInput || (fileUrl ? `Uploaded file: ${fileName}` : ""),
+          fileUrl,
+          fileType,
+          fileName,
           turnOrder: 0,
         });
       }

@@ -105,6 +105,9 @@ export const api = {
         isRewrite: z.boolean().optional(),
         messageIdToRewrite: z.number().optional(),
         newContent: z.string().optional(), // Content for rewrite
+        fileUrl: z.string().optional(),
+        fileType: z.string().optional(),
+        fileName: z.string().optional(),
       }),
       responses: {
         200: z.object({

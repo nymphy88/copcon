@@ -57,6 +57,7 @@ export async function generateResponse(
         model: agent.model,
         messages: messages as any,
         temperature: agent.temperature ? agent.temperature / 100 : 0.7,
+        max_tokens: agent.maxTokens || 1000,
       });
 
       content = response.choices[0]?.message?.content || "";
@@ -72,7 +73,7 @@ export async function generateResponse(
         model: agent.model,
         system: systemMessage,
         messages: messages as any,
-        max_tokens: 4096,
+        max_tokens: agent.maxTokens || 4096,
         temperature: agent.temperature ? agent.temperature / 100 : 0.7,
       });
 
@@ -100,7 +101,11 @@ export async function generateResponse(
         }));
         
         const chatSession = model.startChat({
-             history: formattedHistory
+             history: formattedHistory,
+             generationConfig: {
+                 maxOutputTokens: agent.maxTokens || 1000,
+                 temperature: agent.temperature ? agent.temperature / 100 : 0.7,
+             }
         });
 
         const result = await chatSession.sendMessage(lastUserMessage || "Continue");

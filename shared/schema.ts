@@ -26,6 +26,7 @@ export const agents = pgTable("agents", {
   model: text("model").notNull(),
   temperature: integer("temperature").default(70), // stored as 0-100
   inputScope: integer("input_scope").default(2), // Number of messages to see (1, 2, 5, etc.)
+  maxTokens: integer("max_tokens").default(1000), // Max tokens for response
   color: text("color").default("#3b82f6"), // Visual distinction
   isModerator: boolean("is_moderator").default(false), // Is this agent the moderator?
   createdAt: timestamp("created_at").defaultNow(),
@@ -37,6 +38,9 @@ export const messages = pgTable("messages", {
   agentId: integer("agent_id"), // Nullable for user messages
   role: text("role").notNull(), // 'user', 'assistant', 'system'
   content: text("content").notNull(),
+  fileUrl: text("file_url"), // URL/Path to uploaded file
+  fileType: text("file_type"), // mime type or category
+  fileName: text("file_name"), // original filename
   parentId: integer("parent_id"), // For threading/turns
   isHidden: boolean("is_hidden").default(false), // Scoping: hidden from AI context
   turnOrder: integer("turn_order").default(0),

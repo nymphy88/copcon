@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Send, Play, Pause, Edit2, RotateCw, Activity, Bot } from "lucide-react";
+import { Send, Play, Pause, Edit2, RotateCw, Activity, Bot, Paperclip, FileText, ImageIcon, X } from "lucide-react";
 import { useConversation, useUpdateConversation } from "@/hooks/use-conversations";
 import { useAgents } from "@/hooks/use-agents";
 import { useRunTurn } from "@/hooks/use-turns";
@@ -29,8 +29,11 @@ export function ChatInterface({ conversationId }: ChatInterfaceProps) {
   const [selectedNextAgent, setSelectedNextAgent] = useState<string>("auto");
   const [isLogOpen, setIsLogOpen] = useState(false);
   const [rewriteModal, setRewriteModal] = useState<{ id: number, content: string } | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [pendingFile, setPendingFile] = useState<{ url: string, type: string, name: string } | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Sync goal when conversation loads
   useEffect(() => {
@@ -71,12 +74,40 @@ export function ChatInterface({ conversationId }: ChatInterfaceProps) {
     runTurn.mutate({
       conversationId,
       userInput: userInput || undefined,
-      agentId
+      agentId,
+      fileUrl: pendingFile?.url,
+      fileType: pendingFile?.type,
+      fileName: pendingFile?.name
     }, {
       onSuccess: () => {
         setUserInput("");
+        setPendingFile(null);
       }
     });
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      // Mock upload - in a real app we'd upload to S3/Storage
+      // For now we'll use a data URL for simplicity in this demo environment
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPendingFile({
+          url: reader.result as string,
+          type: file.type,
+          name: file.name
+        });
+        setIsUploading(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      console.error("Upload failed", err);
+      setIsUploading(false);
+    }
   };
 
   // Handle Rewrite
@@ -233,6 +264,21 @@ export function ChatInterface({ conversationId }: ChatInterfaceProps) {
                         : "bg-card/80 border-white/5 text-foreground/90 rounded-tl-sm"}
                       ${isProcessing && idx === conversationData.messages.length - 1 ? "ring-2 ring-primary/50 scale-[1.01] shadow-[0_0_25px_rgba(59,130,246,0.2)]" : ""}
                    `}>
+                      {msg.fileUrl && (
+                        <div className="mb-3 p-2 bg-black/20 rounded-lg border border-white/10 flex items-center gap-3">
+                          {msg.fileType?.startsWith("image/") ? (
+                            <img src={msg.fileUrl} alt={msg.fileName || "Uploaded"} className="max-w-full max-h-48 rounded object-contain" />
+                          ) : (
+                            <>
+                              <FileText className="h-8 w-8 text-primary" />
+                              <div className="flex flex-col">
+                                <span className="text-xs font-medium truncate max-w-[200px]">{msg.fileName}</span>
+                                <span className="text-[10px] text-muted-foreground uppercase">{msg.fileType}</span>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      )}
                       {msg.content}
                    </div>
 
@@ -267,7 +313,33 @@ export function ChatInterface({ conversationId }: ChatInterfaceProps) {
       {/* Input Area */}
       <div className="p-4 bg-background border-t border-white/5">
         <form onSubmit={handleSubmit} className="flex flex-col gap-3 max-w-4xl mx-auto">
+          {pendingFile && (
+            <div className="flex items-center gap-2 p-2 bg-primary/10 border border-primary/20 rounded-lg self-start">
+              {pendingFile.type.startsWith("image/") ? <ImageIcon className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
+              <span className="text-xs truncate max-w-[200px]">{pendingFile.name}</span>
+              <Button size="icon" variant="ghost" className="h-5 w-5 hover:bg-white/10" onClick={() => setPendingFile(null)}>
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
+          )}
           <div className="flex gap-2">
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              className="hidden" 
+              onChange={handleFileSelect}
+              accept="image/*,.py,.js,.ts,.txt,.pdf,.json"
+            />
+            <Button 
+              type="button" 
+              variant="outline" 
+              size="icon" 
+              className="shrink-0 bg-card border-white/10"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading}
+            >
+              <Paperclip className="h-4 w-4" />
+            </Button>
             <Select value={selectedNextAgent} onValueChange={setSelectedNextAgent}>
               <SelectTrigger className="w-[180px] bg-card border-white/10">
                 <SelectValue placeholder="Next Agent" />
