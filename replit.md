@@ -6,12 +6,12 @@ This is a **multi-agent AI orchestrator** — a dashboard application where user
 
 Key features:
 - Create and manage conversations with a defined goal/briefing
-- Configure multiple AI agents with different providers, models, roles, and system prompts
-- Run turns where agents respond based on conversation history (with configurable input scope)
-- Auto-mode that loops agent turns automatically with configurable delay
-- Execution logs tracking token usage and latency per turn
-- File attachment support on messages
-- Message rewriting capability
+- Configure multiple AI agents with different providers(API only), models, roles, temperature and system prompts
+- Run turns where agents respond based on conversation history (with configurable input scope length)
+- Auto-mode that loops agent turns automatically with configurable delay, optional end trigger by custom word detected.
+- Execution logs tracking token usage and latency per turn, csv format database for group and individual exported.
+- File attachment support on messages. Build for brainstorming disable agent feature such as generating Image and apps.
+- Message rewriting capability, human in the loop workflow option.
 - Dark-themed professional dashboard UI
 
 ## User Preferences
