@@ -160,7 +160,7 @@ export function ChatInterface({ conversationId }: ChatInterfaceProps) {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 font-thin text-[12px] text-right">
              <div className="flex items-center gap-2 bg-black/20 rounded-full px-3 py-1 border border-white/5">
               <span className="text-xs text-muted-foreground whitespace-nowrap">Delay (ms)</span>
               <Input 
@@ -228,7 +228,6 @@ export function ChatInterface({ conversationId }: ChatInterfaceProps) {
           })}
         </div>
       </div>
-
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-6" ref={scrollRef}>
         <AnimatePresence initial={false}>
@@ -321,7 +320,6 @@ export function ChatInterface({ conversationId }: ChatInterfaceProps) {
         )}
         <div className="h-4" /> {/* Spacer */}
       </div>
-
       {/* Input Area */}
       <div className="p-4 bg-background border-t border-white/5">
         <form onSubmit={handleSubmit} className="flex flex-col gap-3 max-w-4xl mx-auto">
@@ -377,7 +375,6 @@ export function ChatInterface({ conversationId }: ChatInterfaceProps) {
           </div>
         </form>
       </div>
-
       {/* Rewrite Modal */}
       <Dialog open={!!rewriteModal} onOpenChange={(o) => !o && setRewriteModal(null)}>
         <DialogContent className="bg-card border-white/10">
@@ -395,7 +392,6 @@ export function ChatInterface({ conversationId }: ChatInterfaceProps) {
            </DialogFooter>
         </DialogContent>
       </Dialog>
-
       {/* Logs Modal */}
       <LogViewer 
         conversationId={conversationId} 
