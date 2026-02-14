@@ -1,6 +1,6 @@
 
 import { z } from 'zod';
-import { insertConversationSchema, insertAgentSchema, insertMessageSchema, conversations, agents, messages, logs } from './schema';
+import { insertConversationSchema, insertAgentSchema, insertMessageSchema, conversations, agents, messages, logs, runTurnInputSchema } from './schema';
 
 export const errorSchemas = {
   validation: z.object({
@@ -98,17 +98,7 @@ export const api = {
     run: {
       method: 'POST' as const,
       path: '/api/turns/run' as const,
-      input: z.object({
-        conversationId: z.number(),
-        agentId: z.number().optional(), // If not provided, orchestrator logic decides? Or round robin.
-        userInput: z.string().optional(), // For "Submit to next Agent"
-        isRewrite: z.boolean().optional(),
-        messageIdToRewrite: z.number().optional(),
-        newContent: z.string().optional(), // Content for rewrite
-        fileUrl: z.string().optional(),
-        fileType: z.string().optional(),
-        fileName: z.string().optional(),
-      }),
+      input: runTurnInputSchema,
       responses: {
         200: z.object({
           message: z.custom<typeof messages.$inferSelect>(),

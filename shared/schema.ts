@@ -112,13 +112,18 @@ export type ConversationResponse = Conversation & {
   messages: Message[];
 };
 
-export type RunTurnRequest = {
-  conversationId: number;
-  agentId?: number;
-  userInput?: string;
-  isRewrite?: boolean;
-  messageIdToRewrite?: number;
-  newContent?: string;
-};
+export const runTurnInputSchema = z.object({
+  conversationId: z.number(),
+  agentId: z.number().optional(),
+  userInput: z.string().optional(),
+  isRewrite: z.boolean().optional(),
+  messageIdToRewrite: z.number().optional(),
+  newContent: z.string().optional(),
+  fileUrl: z.string().optional(),
+  fileType: z.string().optional(),
+  fileName: z.string().optional(),
+});
+
+export type RunTurnRequest = z.infer<typeof runTurnInputSchema>;
 
 export type AgentConfigResponse = Agent[];

@@ -136,7 +136,7 @@ export function AgentConfig() {
               <div className="space-y-2">
                 <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Role / Identity</label>
                 <Input 
-                  value={formData.role} 
+                  value={formData.role || ""} 
                   onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value }))}
                   placeholder="e.g. Senior Architect, Security Auditor" 
                 />
@@ -145,7 +145,7 @@ export function AgentConfig() {
               <div className="space-y-2">
                 <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Specific Task</label>
                 <Input 
-                  value={formData.task} 
+                  value={formData.task || ""} 
                   onChange={(e) => setFormData(prev => ({ ...prev, task: e.target.value }))}
                   placeholder="e.g. Analyze risks, Propose alternatives" 
                 />

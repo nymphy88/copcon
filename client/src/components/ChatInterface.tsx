@@ -232,7 +232,7 @@ export function ChatInterface({ conversationId }: ChatInterfaceProps) {
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-6" ref={scrollRef}>
         <AnimatePresence initial={false}>
-          {conversationData.messages?.map((msg, idx) => {
+          {conversationData.messages?.map((msg: any, idx: number) => {
             const isUser = msg.role === "user";
             const agent = agents?.find(a => a.id === msg.agentId);
             const agentColor = agent?.color || "#3b82f6";
@@ -247,8 +247,8 @@ export function ChatInterface({ conversationId }: ChatInterfaceProps) {
               >
                 {!isUser && (
                   <div 
-                    className={`w-8 h-8 rounded-lg flex items-center justify-center text-white mr-3 mt-1 shadow-md shrink-0 transition-all ${isProcessing && idx === conversationData.messages.length - 1 ? "ring-2 ring-white ring-offset-2 ring-offset-background scale-110 shadow-[0_0_15px_white]" : ""}`} 
-                    style={{ backgroundColor: agentColor }}
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center text-white mr-3 mt-1 shadow-md shrink-0 transition-all ${isProcessing && idx === (conversationData.messages?.length || 0) - 1 ? "ring-2 ring-white ring-offset-2 ring-offset-background scale-110 shadow-[0_0_15px_white]" : ""}`} 
+                    style={{ backgroundColor: agentColor as any }}
                   >
                     <Bot className="w-5 h-5" />
                   </div>
@@ -274,7 +274,7 @@ export function ChatInterface({ conversationId }: ChatInterfaceProps) {
                       ${isUser 
                         ? "bg-primary/10 border-primary/20 text-foreground rounded-tr-sm" 
                         : "bg-card/80 border-white/5 text-foreground/90 rounded-tl-sm"}
-                      ${isProcessing && idx === conversationData.messages.length - 1 ? "ring-2 ring-primary/50 scale-[1.01] shadow-[0_0_25px_rgba(59,130,246,0.2)]" : ""}
+                      ${isProcessing && idx === (conversationData.messages?.length || 0) - 1 ? "ring-2 ring-primary/50 scale-[1.01] shadow-[0_0_25px_rgba(59,130,246,0.2)]" : ""}
                    `}>
                       {msg.fileUrl && (
                         <div className="mb-3 p-2 bg-black/20 rounded-lg border border-white/10 flex items-center gap-3">
