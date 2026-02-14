@@ -13,6 +13,8 @@ export const conversations = pgTable("conversations", {
   isActive: boolean("is_active").default(true),
   autoMode: boolean("auto_mode").default(false), // Auto Mode toggle
   autoDelay: integer("auto_delay").default(2000), // Delay in ms
+  turnLimit: integer("turn_limit").default(0), // 0 means no limit
+  completionKeywords: text("completion_keywords").default(""), // comma separated keywords
   createdAt: timestamp("created_at").defaultNow(),
 });
 

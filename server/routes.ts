@@ -142,11 +142,22 @@ export async function registerRoutes(
 
       const response = await generateResponse(agent, conversation.goal || "No specific goal.", history);
 
+      // Check for completion keywords or turn limits
+      let content = response.content;
+      const keywords = (conversation.completionKeywords || "").split(",").map(k => k.trim()).filter(Boolean);
+      const isLimitReached = conversation.turnLimit > 0 && visibleMessages.length >= conversation.turnLimit;
+      const hasKeyword = keywords.some(k => content.toLowerCase().includes(k.toLowerCase()));
+
+      if (isLimitReached || hasKeyword) {
+          await storage.updateConversation(conversationId, { isActive: false, autoMode: false });
+          content += "\n\n[Discussion Completed: " + (isLimitReached ? "Turn limit reached" : "Completion keyword detected") + "]";
+      }
+
       const newMessage = await storage.createMessage({
         conversationId,
         agentId,
         role: "assistant",
-        content: response.content,
+        content,
         turnOrder: (visibleMessages.length > 0 ? (visibleMessages[visibleMessages.length-1].turnOrder || 0) + 1 : 1),
       });
 

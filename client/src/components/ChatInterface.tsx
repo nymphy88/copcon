@@ -143,64 +143,8 @@ export function ChatInterface({ conversationId }: ChatInterfaceProps) {
 
   return (
     <div className="flex-1 flex flex-col h-full bg-background relative overflow-hidden">
-      {/* Header */}
-      <div className="p-4 border-b border-white/5 flex flex-col gap-4 glass-panel z-10">
-        <div className="flex items-center justify-between">
-          <div className="flex flex-col gap-1 w-full max-w-2xl">
-            <h2 className="font-bold text-lg leading-none">{conversationData.title}</h2>
-            <div className="flex items-center gap-2 mt-2">
-              <Badge variant="secondary" className="bg-primary/20 text-primary border-primary/20 text-[10px] py-0">BRIEFING / MAIN GOAL</Badge>
-              <Input 
-                className="h-8 bg-black/20 border-white/10 hover:border-white/20 focus:border-primary/50 text-foreground px-3 transition-all rounded-lg text-sm"
-                placeholder="Set the briefing that all agents will follow..."
-                value={goal}
-                onChange={(e) => setGoal(e.target.value)}
-                onBlur={handleGoalBlur}
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 font-thin text-[12px] text-right">
-             <div className="flex items-center gap-2 bg-black/20 rounded-full px-3 py-1 border border-white/5">
-              <span className="text-xs text-muted-foreground whitespace-nowrap">Delay (ms)</span>
-              <Input 
-                type="number" 
-                className="w-16 h-6 text-xs bg-transparent border-none text-right p-0 focus-visible:ring-0"
-                value={autoDelay}
-                onChange={(e) => setAutoDelay(parseInt(e.target.value))}
-                onBlur={() => updateConversation.mutate({ id: conversationId, autoDelay })}
-              />
-             </div>
-
-             <Button 
-               variant={conversationData.autoMode ? "destructive" : "default"} 
-               size="sm"
-               onClick={toggleAutoMode}
-               className={`gap-2 transition-all ${conversationData.autoMode ? "animate-pulse shadow-[0_0_15px_rgba(239,68,68,0.5)]" : "shadow-lg shadow-primary/20"}`}
-             >
-               {conversationData.autoMode ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-               {conversationData.autoMode ? "Stop Auto" : "Start Auto"}
-             </Button>
-
-             <Button variant="outline" size="icon" onClick={() => setIsLogOpen(true)} title="View Logs">
-               <Activity className="h-4 w-4" />
-             </Button>
-
-             <div className="flex items-center gap-2 bg-black/20 rounded-full px-3 py-1 border border-white/5">
-                <input 
-                  type="checkbox" 
-                  id="autoPass" 
-                  checked={automaticPass}
-                  onChange={(e) => setAutomaticPass(e.target.checked)}
-                  className="rounded border-white/20 bg-background/50"
-                />
-                <label htmlFor="autoPass" className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Auto Pass</label>
-             </div>
-          </div>
-        </div>
-
-        {/* Timeline / Queue View */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+      {/* Timeline / Queue View */}
+      <div className="flex items-center gap-2 overflow-x-auto p-4 border-b border-white/5 scrollbar-hide shrink-0">
           <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest shrink-0">Timeline / Queue:</span>
           {agents?.map((agent, i) => {
             const isTarget = selectedNextAgent !== "auto" ? parseInt(selectedNextAgent) === agent.id : (i === (conversationData.messages?.length || 0) % agents.length);
@@ -227,7 +171,7 @@ export function ChatInterface({ conversationId }: ChatInterfaceProps) {
             );
           })}
         </div>
-      </div>
+
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-6" ref={scrollRef}>
         <AnimatePresence initial={false}>
