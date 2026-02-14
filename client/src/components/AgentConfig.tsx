@@ -174,6 +174,17 @@ export function AgentConfig() {
               </div>
 
               <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  Temperature: {formData.temperature}%
+                </label>
+                <Slider 
+                  value={[formData.temperature || 70]} 
+                  onValueChange={([val]) => setFormData(prev => ({ ...prev, temperature: val }))}
+                  max={100} step={1} 
+                />
+              </div>
+
+              <div className="space-y-2">
                 <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Role</label>
                 <div className="flex items-center gap-2">
                   <input 

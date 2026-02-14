@@ -46,16 +46,15 @@ export default function Dashboard() {
         />
       </div>
       
-      <div className="flex-1 flex flex-col relative overflow-hidden">
-        {/* Toggle buttons for mobile or preference */}
-        <div className="absolute top-4 left-4 z-50 flex gap-2">
-          {sidebarCollapsed && (
-            <Button size="icon" variant="outline" className="h-8 w-8 bg-background/80 backdrop-blur-sm" onClick={() => setSidebarCollapsed(false)}>
-              <Menu className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
+      {/* Sidebar Toggle Button */}
+      <button 
+        onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+        className={`absolute top-1/2 -translate-y-1/2 h-20 w-4 bg-white/5 hover:bg-white/10 border-r border-t border-b border-white/10 rounded-r-md flex items-center justify-center transition-all z-20 ${sidebarCollapsed ? "left-0" : "left-80"}`}
+      >
+        {sidebarCollapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
+      </button>
 
+      <div className="flex-1 flex flex-col relative overflow-hidden">
         {selectedConversationId ? (
           <div className="flex-1 flex overflow-hidden relative">
              <ChatInterface conversationId={selectedConversationId} />

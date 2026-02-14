@@ -27,6 +27,7 @@ export function ChatInterface({ conversationId }: ChatInterfaceProps) {
   const [goal, setGoal] = useState("");
   const [autoDelay, setAutoDelay] = useState(2000);
   const [selectedNextAgent, setSelectedNextAgent] = useState<string>("auto");
+  const [automaticPass, setAutomaticPass] = useState(true);
   const [isLogOpen, setIsLogOpen] = useState(false);
   const [rewriteModal, setRewriteModal] = useState<{ id: number, content: string } | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -127,15 +128,15 @@ export function ChatInterface({ conversationId }: ChatInterfaceProps) {
   useEffect(() => {
     let timeout: NodeJS.Timeout;
     
-    if (conversationData?.autoMode && !runTurn.isPending) {
+    if (conversationData?.autoMode && !runTurn.isPending && automaticPass) {
+      console.log(`[AutoMode] Triggering next turn in ${autoDelay}ms...`);
       timeout = setTimeout(() => {
-        // Trigger next turn automatically
         runTurn.mutate({ conversationId });
       }, autoDelay);
     }
     
     return () => clearTimeout(timeout);
-  }, [conversationData?.autoMode, runTurn.isPending, conversationData?.messages?.length]);
+  }, [conversationData?.autoMode, runTurn.isPending, conversationData?.messages?.length, automaticPass]);
 
 
   if (!conversationData) return <div className="flex-1 flex items-center justify-center text-muted-foreground">Loading chat...</div>;
@@ -184,6 +185,17 @@ export function ChatInterface({ conversationId }: ChatInterfaceProps) {
              <Button variant="outline" size="icon" onClick={() => setIsLogOpen(true)} title="View Logs">
                <Activity className="h-4 w-4" />
              </Button>
+
+             <div className="flex items-center gap-2 bg-black/20 rounded-full px-3 py-1 border border-white/5">
+                <input 
+                  type="checkbox" 
+                  id="autoPass" 
+                  checked={automaticPass}
+                  onChange={(e) => setAutomaticPass(e.target.checked)}
+                  className="rounded border-white/20 bg-background/50"
+                />
+                <label htmlFor="autoPass" className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Auto Pass</label>
+             </div>
           </div>
         </div>
 
