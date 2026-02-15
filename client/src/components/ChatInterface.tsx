@@ -171,7 +171,6 @@ export function ChatInterface({ conversationId }: ChatInterfaceProps) {
             );
           })}
         </div>
-
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-6" ref={scrollRef}>
         <AnimatePresence initial={false}>
@@ -196,7 +195,6 @@ export function ChatInterface({ conversationId }: ChatInterfaceProps) {
                     <Bot className="w-5 h-5" />
                   </div>
                 )}
-                
                 <div className={`relative max-w-[80%] group`}>
                    <div className="flex items-baseline gap-2 mb-1 px-1">
                       <div className="flex flex-col">
@@ -212,13 +210,7 @@ export function ChatInterface({ conversationId }: ChatInterfaceProps) {
                       {!isUser && <span className="text-[10px] text-muted-foreground uppercase self-start mt-0.5">{msg.role}</span>}
                    </div>
                    
-                   <div className={`
-                      p-4 rounded-2xl text-sm leading-relaxed shadow-md backdrop-blur-sm border transition-all
-                      ${isUser 
-                        ? "bg-primary/10 border-primary/20 text-foreground rounded-tr-sm" 
-                        : "bg-card/80 border-white/5 text-foreground/90 rounded-tl-sm"}
-                      ${isProcessing && idx === (conversationData.messages?.length || 0) - 1 ? "ring-2 ring-primary/50 scale-[1.01] shadow-[0_0_25px_rgba(59,130,246,0.2)]" : ""}
-                   `}>
+                   <div className="p-4 rounded-2xl shadow-md backdrop-blur-sm border transition-all bg-primary/10 border-primary/20 text-foreground rounded-tr-sm text-[12px]">
                       {msg.fileUrl && (
                         <div className="mb-3 p-2 bg-black/20 rounded-lg border border-white/10 flex items-center gap-3">
                           {msg.fileType?.startsWith("image/") ? (
