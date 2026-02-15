@@ -257,7 +257,7 @@ export function ChatInterface({ conversationId }: ChatInterfaceProps) {
         <div className="h-4" /> {/* Spacer */}
       </div>
       {/* Input Area */}
-      <div className="p-4 bg-background border-t border-white/5">
+      <div className="p-4 bg-background border-t border-white/5 text-[14px]">
         <form onSubmit={handleSubmit} className="flex flex-col gap-3 max-w-4xl mx-auto">
           {pendingFile && (
             <div className="flex items-center gap-2 p-2 bg-primary/10 border border-primary/20 rounded-lg self-start">
