@@ -1,25 +1,77 @@
 import { useState, useEffect, useRef } from "react";
-import { Send, Play, Pause, Edit2, RotateCw, Activity, Bot, Paperclip, FileText, ImageIcon, X } from "lucide-react";
+import { Send, Play, Pause, Edit2, RotateCw, Activity, Bot, Paperclip, FileText, ImageIcon, X, GripVertical } from "lucide-react";
 import { useConversation, useUpdateConversation } from "@/hooks/use-conversations";
 import { useAgents } from "@/hooks/use-agents";
 import { useRunTurn } from "@/hooks/use-turns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { LogViewer } from "./LogViewer";
 import { motion, AnimatePresence } from "framer-motion";
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, horizontalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface ChatInterfaceProps {
   conversationId: number;
 }
 
+function SortableAgent({ agent, i, isTarget, isProcessing, runTurn, agentsCount, goal, conversationId, updateConversation }: any) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+  } = useSortable({ id: agent.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="flex items-center shrink-0">
+      <div 
+        {...attributes}
+        {...listeners}
+        className={`flex items-center gap-2 px-2 py-1 rounded-md border text-[10px] font-medium transition-all cursor-grab active:cursor-grabbing
+          ${isProcessing 
+            ? "border-primary bg-primary/20 shadow-[0_0_15px_rgba(59,130,246,0.5)] scale-110 ring-1 ring-primary/50 animate-pulse" 
+            : isTarget && !runTurn.isPending
+              ? "border-primary/40 bg-primary/5 opacity-100"
+              : "border-white/5 bg-white/5 opacity-40"}`}
+      >
+        <GripVertical className="w-3 h-3 text-muted-foreground/30" />
+        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: agent.color }} />
+        <div className="flex flex-col">
+          <span>{agent.name}</span>
+          {agent.role && <span className="text-[8px] opacity-70 leading-none">{agent.role}</span>}
+        </div>
+      </div>
+      {i < (agentsCount - 1) && (
+        <div className="mx-1 flex items-center gap-1">
+          <span className="text-muted-foreground/20">→</span>
+          <Button variant="ghost" size="icon" className="h-4 w-4 rounded-full bg-white/5 hover:bg-primary/20 group" onClick={() => {
+            const marker = `\n\n[POINT: DISCUSSION MARKER ${i + 1}]`;
+            updateConversation.mutate({ id: conversationId, goal: goal + marker });
+          }}>
+            <X className="h-2 w-2 rotate-45 text-muted-foreground group-hover:text-primary" />
+          </Button>
+          <span className="text-muted-foreground/20">→</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function ChatInterface({ conversationId }: ChatInterfaceProps) {
   const { data: conversationData } = useConversation(conversationId);
-  const { data: agents } = useAgents();
+  const { data: initialAgents } = useAgents();
+  const [agents, setAgents] = useState<any[]>([]);
   const updateConversation = useUpdateConversation();
   const runTurn = useRunTurn();
   
@@ -35,6 +87,30 @@ export function ChatInterface({ conversationId }: ChatInterfaceProps) {
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  useEffect(() => {
+    if (initialAgents) {
+      setAgents(initialAgents);
+    }
+  }, [initialAgents]);
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (active.id !== over?.id) {
+      setAgents((items) => {
+        const oldIndex = items.findIndex((i) => i.id === active.id);
+        const newIndex = items.findIndex((i) => i.id === over?.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  }
   
   // Sync goal when conversation loads
   useEffect(() => {
@@ -143,33 +219,65 @@ export function ChatInterface({ conversationId }: ChatInterfaceProps) {
 
   return (
     <div className="flex-1 flex flex-col h-full bg-background relative overflow-hidden">
+      {/* Header with Briefing/Goal */}
+      <div className="p-4 border-b border-white/5 bg-card/30 backdrop-blur-md z-10">
+        <div className="flex flex-col gap-2 w-full max-w-4xl mx-auto">
+          <div className="flex items-center justify-between">
+            <h2 className="font-bold text-lg leading-none truncate">{conversationData.title}</h2>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setIsLogOpen(true)} title="View Logs">
+                <Activity className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary" className="bg-primary/20 text-primary border-primary/20 text-[10px] py-0 shrink-0">GOAL</Badge>
+            <Input 
+              className="h-8 bg-black/20 border-white/10 hover:border-white/20 focus:border-primary/50 text-foreground px-3 transition-all rounded-lg text-sm"
+              placeholder="Set the briefing that all agents will follow..."
+              value={goal}
+              onChange={(e) => setGoal(e.target.value)}
+              onBlur={handleGoalBlur}
+            />
+          </div>
+        </div>
+      </div>
+
       {/* Timeline / Queue View */}
       <div className="flex items-center gap-2 overflow-x-auto p-4 border-b border-white/5 scrollbar-hide shrink-0">
           <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest shrink-0">Timeline / Queue:</span>
-          {agents?.map((agent, i) => {
-            const isTarget = selectedNextAgent !== "auto" ? parseInt(selectedNextAgent) === agent.id : (i === (conversationData.messages?.length || 0) % agents.length);
-            const isProcessing = runTurn.isPending && isTarget;
-            
-            return (
-              <div key={agent.id} className="flex items-center shrink-0">
-                <div 
-                  className={`flex items-center gap-2 px-2 py-1 rounded-md border text-[10px] font-medium transition-all
-                    ${isProcessing 
-                      ? "border-primary bg-primary/20 shadow-[0_0_15px_rgba(59,130,246,0.5)] scale-110 ring-1 ring-primary/50 animate-pulse" 
-                      : isTarget && !runTurn.isPending
-                        ? "border-primary/40 bg-primary/5 opacity-100"
-                        : "border-white/5 bg-white/5 opacity-40"}`}
-                >
-                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: agent.color }} />
-                  <div className="flex flex-col">
-                    <span>{agent.name}</span>
-                    {agent.role && <span className="text-[8px] opacity-70 leading-none">{agent.role}</span>}
-                  </div>
-                </div>
-                {i < (agents.length - 1) && <span className="mx-1 text-muted-foreground/20">→</span>}
+          <DndContext 
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext 
+              items={agents.map(a => a.id)}
+              strategy={horizontalListSortingStrategy}
+            >
+              <div className="flex items-center gap-2">
+                {agents.map((agent, i) => {
+                  const isTarget = selectedNextAgent !== "auto" ? parseInt(selectedNextAgent) === agent.id : (i === (conversationData.messages?.length || 0) % (agents?.length || 1));
+                  const isProcessing = runTurn.isPending && isTarget;
+                  
+                  return (
+                    <SortableAgent 
+                      key={agent.id}
+                      agent={agent}
+                      i={i}
+                      isTarget={isTarget}
+                      isProcessing={isProcessing}
+                      runTurn={runTurn}
+                      agentsCount={agents.length}
+                      goal={goal}
+                      conversationId={conversationId}
+                      updateConversation={updateConversation}
+                    />
+                  );
+                })}
               </div>
-            );
-          })}
+            </SortableContext>
+          </DndContext>
         </div>
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-6" ref={scrollRef}>
@@ -298,14 +406,21 @@ export function ChatInterface({ conversationId }: ChatInterfaceProps) {
               </SelectContent>
             </Select>
             <div className="flex-1 relative">
-              <Input 
+              <Textarea 
                 value={userInput}
                 onChange={(e) => setUserInput(e.target.value)}
                 placeholder="Type instructions or intervention..."
-                className="bg-card border-white/10 pr-12 focus-visible:ring-primary"
+                className="bg-card border-white/10 pr-12 focus-visible:ring-primary min-h-[40px] max-h-[200px] py-2"
+                rows={1}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSubmit();
+                  }
+                }}
               />
             </div>
-            <Button type="submit" disabled={runTurn.isPending} className="w-24 font-semibold shadow-lg shadow-primary/20">
+            <Button type="submit" disabled={runTurn.isPending} className="h-10 w-24 font-semibold shadow-lg shadow-primary/20 self-end">
               {userInput ? "Submit" : "Next Turn"}
             </Button>
           </div>
