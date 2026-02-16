@@ -34,34 +34,34 @@ function SortableAgent({ agent, i, isTarget, isProcessing, runTurn, agentsCount,
   };
 
   return (
-    <div ref={setNodeRef} style={style} className="flex items-center shrink-0">
+    <div ref={setNodeRef} style={style} className="flex items-center shrink-0 will-change-transform">
       <div 
         {...attributes}
         {...listeners}
-        className={`flex items-center gap-2 px-2 py-1 rounded-md border text-[10px] font-medium transition-all cursor-grab active:cursor-grabbing
+        className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-[11px] font-semibold transition-all cursor-grab active:cursor-grabbing hover:bg-white/10
           ${isProcessing 
-            ? "border-primary bg-primary/20 shadow-[0_0_15px_rgba(59,130,246,0.5)] scale-110 ring-1 ring-primary/50 animate-pulse" 
+            ? "border-primary bg-primary/20 shadow-[0_0_20px_rgba(59,130,246,0.3)] scale-105 ring-1 ring-primary/50" 
             : isTarget && !runTurn.isPending
-              ? "border-primary/40 bg-primary/5 opacity-100"
-              : "border-white/5 bg-white/5 opacity-40"}`}
+              ? "border-primary/40 bg-primary/10 opacity-100 shadow-sm"
+              : "border-white/5 bg-white/5 opacity-60"}`}
       >
-        <GripVertical className="w-3 h-3 text-muted-foreground/30" />
-        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: agent.color }} />
+        <GripVertical className="w-3 h-3 text-muted-foreground/40" />
+        <div className="w-2.5 h-2.5 rounded-full ring-2 ring-background shadow-sm" style={{ backgroundColor: agent.color }} />
         <div className="flex flex-col">
-          <span>{agent.name}</span>
-          {agent.role && <span className="text-[8px] opacity-70 leading-none">{agent.role}</span>}
+          <span className="tracking-tight">{agent.name}</span>
+          {agent.role && <span className="text-[9px] opacity-60 leading-none font-normal">{agent.role}</span>}
         </div>
       </div>
       {i < (agentsCount - 1) && (
-        <div className="mx-1 flex items-center gap-1">
-          <span className="text-muted-foreground/20">→</span>
-          <Button variant="ghost" size="icon" className="h-4 w-4 rounded-full bg-white/5 hover:bg-primary/20 group" onClick={() => {
+        <div className="mx-2 flex items-center gap-1.5">
+          <div className="w-4 h-[1px] bg-white/5" />
+          <Button variant="ghost" size="icon" className="h-5 w-5 rounded-full bg-white/5 hover:bg-primary/20 group transition-all" onClick={() => {
             const marker = `\n\n[POINT: DISCUSSION MARKER ${i + 1}]`;
             updateConversation.mutate({ id: conversationId, goal: goal + marker });
           }}>
-            <X className="h-2 w-2 rotate-45 text-muted-foreground group-hover:text-primary" />
+            <X className="h-3 w-3 rotate-45 text-muted-foreground group-hover:text-primary" />
           </Button>
-          <span className="text-muted-foreground/20">→</span>
+          <div className="w-4 h-[1px] bg-white/5" />
         </div>
       )}
     </div>
@@ -145,17 +145,14 @@ export function ChatInterface({ conversationId }: ChatInterfaceProps) {
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault();
     
-    // Determine agent ID: if 'auto', send undefined, otherwise parse int
-    const agentId = selectedNextAgent === "auto" ? undefined : parseInt(selectedNextAgent);
-
-    runTurn.mutate({
+    const runTurnParams: any = {
       conversationId,
       userInput: userInput || undefined,
       agentId,
       fileUrl: pendingFile?.url,
-      fileType: pendingFile?.type,
-      fileName: pendingFile?.name
-    }, {
+    };
+
+    runTurn.mutate(runTurnParams, {
       onSuccess: () => {
         setUserInput("");
         setPendingFile(null);
@@ -204,10 +201,12 @@ export function ChatInterface({ conversationId }: ChatInterfaceProps) {
   useEffect(() => {
     let timeout: NodeJS.Timeout;
     
+    const runTurnParams: any = { conversationId };
+    
     if (conversationData?.autoMode && !runTurn.isPending && automaticPass) {
       console.log(`[AutoMode] Triggering next turn in ${autoDelay}ms...`);
       timeout = setTimeout(() => {
-        runTurn.mutate({ conversationId });
+        runTurn.mutate(runTurnParams);
       }, autoDelay);
     }
     
@@ -218,23 +217,23 @@ export function ChatInterface({ conversationId }: ChatInterfaceProps) {
   if (!conversationData) return <div className="flex-1 flex items-center justify-center text-muted-foreground">Loading chat...</div>;
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-background relative overflow-hidden">
+    <div className="flex-1 flex flex-col h-full bg-background relative overflow-hidden font-sans">
       {/* Header with Briefing/Goal */}
-      <div className="p-4 border-b border-white/5 bg-card/30 backdrop-blur-md z-10">
-        <div className="flex flex-col gap-2 w-full max-w-4xl mx-auto">
+      <div className="px-6 py-4 border-b border-white/5 glass-panel z-10 shrink-0">
+        <div className="flex flex-col gap-3 w-full max-w-5xl mx-auto">
           <div className="flex items-center justify-between">
-            <h2 className="font-bold text-lg leading-none truncate">{conversationData.title}</h2>
+            <h2 className="font-bold text-xl leading-tight tracking-tight text-foreground/90">{conversationData.title}</h2>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setIsLogOpen(true)} title="View Logs">
-                <Activity className="h-4 w-4" />
+              <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-white/5" onClick={() => setIsLogOpen(true)} title="View Logs">
+                <Activity className="h-4 w-4 text-muted-foreground" />
               </Button>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="bg-primary/20 text-primary border-primary/20 text-[10px] py-0 shrink-0">GOAL</Badge>
+          <div className="flex items-center gap-3">
+            <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 text-[10px] uppercase tracking-tighter px-2 h-5 shrink-0">GOAL</Badge>
             <Input 
-              className="h-8 bg-black/20 border-white/10 hover:border-white/20 focus:border-primary/50 text-foreground px-3 transition-all rounded-lg text-sm"
-              placeholder="Set the briefing that all agents will follow..."
+              className="h-9 bg-black/40 border-white/5 hover:border-white/10 focus:border-primary/40 text-foreground px-4 transition-all rounded-full text-sm placeholder:text-muted-foreground/40"
+              placeholder="Define the core mission for the agents..."
               value={goal}
               onChange={(e) => setGoal(e.target.value)}
               onBlur={handleGoalBlur}
@@ -244,8 +243,8 @@ export function ChatInterface({ conversationId }: ChatInterfaceProps) {
       </div>
 
       {/* Timeline / Queue View */}
-      <div className="flex items-center gap-2 overflow-x-auto p-4 border-b border-white/5 scrollbar-hide shrink-0">
-          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest shrink-0">Timeline / Queue:</span>
+      <div className="flex items-center gap-3 overflow-x-auto px-6 py-3 border-b border-white/5 bg-black/20 scrollbar-hide shrink-0">
+          <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-[0.2em] shrink-0">Flow</span>
           <DndContext 
             sensors={sensors}
             collisionDetection={closestCenter}
@@ -255,7 +254,7 @@ export function ChatInterface({ conversationId }: ChatInterfaceProps) {
               items={agents.map(a => a.id)}
               strategy={horizontalListSortingStrategy}
             >
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
                 {agents.map((agent, i) => {
                   const isTarget = selectedNextAgent !== "auto" ? parseInt(selectedNextAgent) === agent.id : (i === (conversationData.messages?.length || 0) % (agents?.length || 1));
                   const isProcessing = runTurn.isPending && isTarget;

@@ -8,42 +8,45 @@
   --font-sans: 'Plus Jakarta Sans', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
-  /* Dark Theme Base - Professional Dashboard */
-  --background: 222 47% 11%;
+  /* Refined Dark Theme - Deeper contrast */
+  --background: 222 47% 3%;
   --foreground: 210 40% 98%;
 
-  --card: 222 47% 11%;
+  --card: 222 47% 5%;
   --card-foreground: 210 40% 98%;
 
-  --popover: 222 47% 11%;
+  --popover: 222 47% 3%;
   --popover-foreground: 210 40% 98%;
 
   --primary: 217 91% 60%;
   --primary-foreground: 222 47% 11%;
 
-  --secondary: 217 33% 17%;
+  --secondary: 217 33% 12%;
   --secondary-foreground: 210 40% 98%;
 
-  --muted: 217 33% 17%;
-  --muted-foreground: 215 20.2% 65.1%;
+  --muted: 217 33% 12%;
+  --muted-foreground: 215 20.2% 55%;
 
-  --accent: 217 33% 17%;
+  --accent: 217 33% 15%;
   --accent-foreground: 210 40% 98%;
 
   --destructive: 0 62.8% 30.6%;
   --destructive-foreground: 210 40% 98%;
 
-  --border: 217 33% 17%;
-  --input: 217 33% 17%;
+  --border: 217 33% 12%;
+  --input: 217 33% 10%;
   --ring: 224.3 76.3% 48%;
 }
 
 @layer base {
   * {
     @apply border-border;
+    transition: background-color 0.15s ease-out, border-color 0.15s ease-out;
   }
   body {
     @apply bg-background text-foreground font-sans antialiased selection:bg-primary/20 selection:text-primary-foreground;
+    font-size: 13.5px;
+    letter-spacing: -0.01em;
   }
   h1, h2, h3, h4, h5, h6 {
     @apply font-bold tracking-tight;
@@ -52,7 +55,7 @@
 
 @layer utilities {
   .glass-panel {
-    @apply bg-card/50 backdrop-blur-xl border border-white/5 shadow-xl;
+    @apply bg-card/40 backdrop-blur-2xl border border-white/5 shadow-2xl;
   }
   
   .scrollbar-hide::-webkit-scrollbar {
@@ -61,6 +64,10 @@
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+
+  .will-change-transform {
+    will-change: transform;
   }
 }
 

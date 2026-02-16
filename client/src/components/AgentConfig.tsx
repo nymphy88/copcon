@@ -112,7 +112,7 @@ export function AgentConfig() {
   return (
     <div className="w-80 border-l border-white/5 bg-black/20 flex flex-col h-full backdrop-blur-xl">
       <div className="p-4 border-b border-white/5 flex items-center justify-between">
-        <h2 className="font-semibold text-lg tracking-tight">Agent Config</h2>
+        <h2 className="font-semibold text-sm uppercase tracking-widest text-muted-foreground">Agent Configuration</h2>
         <Sheet open={isSheetOpen} onOpenChange={(open) => { setIsSheetOpen(open); if(!open) resetForm(); }}>
           <SheetTrigger asChild>
             <Button size="sm" className="gap-2 bg-primary/10 text-primary hover:bg-primary/20 border-primary/20">
@@ -223,17 +223,6 @@ export function AgentConfig() {
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Temperature: {formData.temperature}%
-                </label>
-                <Slider 
-                  value={[formData.temperature || 70]} 
-                  onValueChange={([val]) => setFormData(prev => ({ ...prev, temperature: val }))}
-                  max={100} step={1} 
-                />
               </div>
 
               <div className="space-y-2">

@@ -203,21 +203,28 @@ export function Sidebar({ selectedId, onSelect }: SidebarProps) {
       )}
 
       <ScrollArea className="flex-1">
-        <div className="p-3 space-y-2">
-          {conversations?.map((conv) => (
+        <div className="p-3 space-y-1">
+          {conversations?.map((conv: any) => (
             <div
               key={conv.id}
               onClick={() => onSelect(conv.id)}
               className={`
-                group flex items-center justify-between p-2.5 rounded-xl cursor-pointer transition-all
-                ${selectedId === conv.id ? "bg-primary/20 border border-primary/30" : "hover:bg-white/5 border border-transparent"}
+                group flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-all duration-200
+                ${selectedId === conv.id 
+                  ? "bg-primary/10 text-primary border border-primary/10 shadow-[0_0_15px_rgba(59,130,246,0.05)]" 
+                  : "hover:bg-white/5 border border-transparent text-muted-foreground/80 hover:text-foreground"}
               `}
             >
               <div className="flex items-center gap-3 overflow-hidden">
-                <MessageSquare className={`h-4 w-4 shrink-0 ${selectedId === conv.id ? "text-primary" : "text-muted-foreground"}`} />
-                <span className="truncate text-sm">{conv.title}</span>
+                <MessageSquare className={`h-4 w-4 shrink-0 transition-colors ${selectedId === conv.id ? "text-primary" : "text-muted-foreground/40 group-hover:text-muted-foreground"}`} />
+                <span className="truncate text-[13px] font-medium tracking-tight">{conv.title}</span>
               </div>
-              <button onClick={(e) => handleDelete(e, conv.id)} className="opacity-0 group-hover:opacity-100"><Trash2 className="h-3 w-3" /></button>
+              <button 
+                onClick={(e) => handleDelete(e, conv.id)} 
+                className="opacity-0 group-hover:opacity-100 p-1 hover:bg-destructive/10 hover:text-destructive rounded-md transition-all"
+              >
+                <Trash2 className="h-3 w-3" />
+              </button>
             </div>
           ))}
         </div>
