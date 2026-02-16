@@ -84,6 +84,8 @@ export function ChatInterface({ conversationId }: ChatInterfaceProps) {
   const [rewriteModal, setRewriteModal] = useState<{ id: number, content: string } | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [pendingFile, setPendingFile] = useState<{ url: string, type: string, name: string } | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isPinned, setIsPinned] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -120,12 +122,18 @@ export function ChatInterface({ conversationId }: ChatInterfaceProps) {
     }
   }, [conversationData?.id]); // Only re-sync when switching conversations
 
+  // Filter messages
+  const filteredMessages = conversationData?.messages?.filter((msg: any) => 
+    msg.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (agents?.find(a => a.id === msg.agentId)?.name || "").toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
+
   // Auto-scroll to bottom
   useEffect(() => {
-    if (scrollRef.current) {
+    if (scrollRef.current && !searchTerm) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [conversationData?.messages?.length]);
+  }, [conversationData?.messages?.length, searchTerm]);
 
   // Handle Goal Update (debounce could be added)
   const handleGoalBlur = () => {
@@ -217,12 +225,44 @@ export function ChatInterface({ conversationId }: ChatInterfaceProps) {
   if (!conversationData) return <div className="flex-1 flex items-center justify-center text-muted-foreground">Loading chat...</div>;
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-background relative overflow-hidden font-sans">
+    <div className={`flex-1 flex flex-col h-full bg-background relative overflow-hidden font-sans ${isPinned ? "border-2 border-primary shadow-2xl z-50" : ""}`}>
       {/* Header with Briefing/Goal */}
-      <div className="px-6 py-4 border-b border-white/5 glass-panel z-10 shrink-0">
+      <div className="px-6 py-4 border-b border-white/5 glass-panel z-10 shrink-0 sticky top-0 bg-background/80 backdrop-blur-md">
         <div className="flex flex-col gap-3 w-full max-w-5xl mx-auto">
           <div className="flex items-center justify-between">
-            <h2 className="font-bold text-xl leading-tight tracking-tight text-foreground/90">{conversationData.title}</h2>
+            <div className="flex items-center gap-4">
+              <h2 className="font-bold text-xl leading-tight tracking-tight text-foreground/90">{conversationData.title}</h2>
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className={`h-8 w-8 transition-colors ${isPinned ? "text-primary bg-primary/10" : "text-muted-foreground"}`}
+                  onClick={() => setIsPinned(!isPinned)}
+                  title={isPinned ? "Unpin Session" : "Pin Session"}
+                >
+                  <Paperclip className={`h-4 w-4 ${isPinned ? "rotate-45" : ""}`} />
+                </Button>
+                <div className="relative w-48 ml-2">
+                  <Activity className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground/50" />
+                  <Input 
+                    className="h-9 pl-9 bg-black/40 border-white/5 hover:border-white/10 focus:border-primary/40 text-[12px] transition-all rounded-full"
+                    placeholder="Search session..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                  {searchTerm && (
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="absolute right-1 top-1 h-7 w-7 rounded-full"
+                      onClick={() => setSearchTerm("")}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-white/5" onClick={() => setIsLogOpen(true)} title="View Logs">
                 <Activity className="h-4 w-4 text-muted-foreground" />
@@ -243,7 +283,7 @@ export function ChatInterface({ conversationId }: ChatInterfaceProps) {
       </div>
 
       {/* Timeline / Queue View */}
-      <div className="flex items-center gap-3 overflow-x-auto px-6 py-3 border-b border-white/5 bg-black/20 scrollbar-hide shrink-0">
+      <div className="flex items-center gap-3 overflow-x-auto px-6 py-3 border-b border-white/5 bg-black/20 scrollbar-hide shrink-0 sticky top-[105px] z-[9] bg-background/80 backdrop-blur-sm">
           <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-[0.2em] shrink-0">Flow</span>
           <DndContext 
             sensors={sensors}
@@ -281,7 +321,7 @@ export function ChatInterface({ conversationId }: ChatInterfaceProps) {
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-6" ref={scrollRef}>
         <AnimatePresence initial={false}>
-          {conversationData.messages?.map((msg: any, idx: number) => {
+          {filteredMessages.map((msg: any, idx: number) => {
             const isUser = msg.role === "user";
             const agent = agents?.find(a => a.id === msg.agentId);
             const agentColor = agent?.color || "#3b82f6";
