@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Send, Play, Pause, Edit2, RotateCw, Activity, Bot, Paperclip, FileText, ImageIcon, X, GripVertical } from "lucide-react";
+import { Send, Play, Pause, Edit2, RotateCw, Activity, Bot, Paperclip, FileText, ImageIcon, X, GripVertical, Search } from "lucide-react";
 import { useConversation, useUpdateConversation } from "@/hooks/use-conversations";
 import { useAgents } from "@/hooks/use-agents";
 import { useRunTurn } from "@/hooks/use-turns";
@@ -14,6 +14,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, horizontalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import * as ReactWindow from "react-window";
+import * as AutoSizerModule from "react-virtualized-auto-sizer";
+
+const List = (ReactWindow as any).FixedSizeList || (ReactWindow as any).default?.FixedSizeList || ReactWindow;
+const AutoSizer = (AutoSizerModule as any).default || AutoSizerModule;
 
 interface ChatInterfaceProps {
   conversationId: number;
@@ -221,6 +226,78 @@ export function ChatInterface({ conversationId }: ChatInterfaceProps) {
     return () => clearTimeout(timeout);
   }, [conversationData?.autoMode, runTurn.isPending, conversationData?.messages?.length, automaticPass]);
 
+  const Row = ({ index, style }: { index: number; style: React.CSSProperties }) => {
+    const msg = filteredMessages[index];
+    const isUser = msg.role === "user";
+    const agent = agents?.find(a => a.id === msg.agentId);
+    const agentColor = agent?.color || "#3b82f6";
+    const isProcessing = runTurn.isPending && (selectedNextAgent !== "auto" ? parseInt(selectedNextAgent) === msg.agentId : true);
+
+    return (
+      <div style={style}>
+        <div className="px-4 py-3">
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={`flex w-full ${isUser ? "justify-end" : "justify-start"}`}
+          >
+            {!isUser && (
+              <div 
+                className={`w-8 h-8 rounded-lg flex items-center justify-center text-white mr-3 mt-1 shadow-md shrink-0 transition-all ${isProcessing && index === (conversationData?.messages?.length || 0) - 1 ? "ring-2 ring-white ring-offset-2 ring-offset-background scale-110 shadow-[0_0_15px_white]" : ""}`} 
+                style={{ backgroundColor: agentColor as any }}
+              >
+                <Bot className="w-5 h-5" />
+              </div>
+            )}
+            <div className={`relative max-w-[80%] group`}>
+               <div className="flex items-baseline gap-2 mb-1 px-1">
+                  <div className="flex flex-col">
+                    <span className={`text-xs font-bold ${isUser ? "text-primary ml-auto" : ""}`} style={{ color: !isUser ? agentColor : undefined }}>
+                      {isUser ? "You" : agent?.name || "Unknown Agent"}
+                    </span>
+                    {!isUser && agent?.role && (
+                      <span className="text-[9px] text-muted-foreground font-medium uppercase tracking-tighter">
+                        {agent.role}
+                      </span>
+                    )}
+                  </div>
+                  {!isUser && <span className="text-[10px] text-muted-foreground uppercase self-start mt-0.5">{msg.role}</span>}
+               </div>
+               
+               <div className="p-4 rounded-2xl shadow-md backdrop-blur-sm border transition-all bg-primary/10 border-primary/20 text-foreground rounded-tr-sm text-[12px]">
+                  {msg.fileUrl && (
+                    <div className="mb-3 p-2 bg-black/20 rounded-lg border border-white/10 flex items-center gap-3">
+                      {msg.fileType?.startsWith("image/") ? (
+                        <img src={msg.fileUrl} alt={msg.fileName || "Uploaded"} className="max-w-full max-h-48 rounded object-contain" />
+                      ) : (
+                        <>
+                          <FileText className="h-8 w-8 text-primary" />
+                          <div className="flex flex-col">
+                            <span className="text-xs font-medium truncate max-w-[200px]">{msg.fileName}</span>
+                            <span className="text-[10px] text-muted-foreground uppercase">{msg.fileType}</span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+                  {msg.content}
+               </div>
+
+               {/* Actions */}
+               <div className={`absolute top-2 ${isUser ? "-left-10" : "-right-10"} opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1`}>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-white/10 rounded-full" onClick={() => setRewriteModal({ id: msg.id, content: msg.content })}>
+                    <Edit2 className="h-3.5 w-3.5 text-muted-foreground" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-white/10 rounded-full" onClick={() => runTurn.mutate({ conversationId, isRewrite: true, messageIdToRewrite: msg.id })}>
+                     <RotateCw className="h-3.5 w-3.5 text-muted-foreground" />
+                  </Button>
+               </div>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    );
+  };
 
   if (!conversationData) return <div className="flex-1 flex items-center justify-center text-muted-foreground">Loading chat...</div>;
 
@@ -319,79 +396,24 @@ export function ChatInterface({ conversationId }: ChatInterfaceProps) {
           </DndContext>
         </div>
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-6" ref={scrollRef}>
-        <AnimatePresence initial={false}>
-          {filteredMessages.map((msg: any, idx: number) => {
-            const isUser = msg.role === "user";
-            const agent = agents?.find(a => a.id === msg.agentId);
-            const agentColor = agent?.color || "#3b82f6";
-            const isProcessing = runTurn.isPending && (selectedNextAgent !== "auto" ? parseInt(selectedNextAgent) === msg.agentId : true); // Simplification for glow
+      <div className="flex-1 min-h-0 bg-background/50">
+        <AutoSizer>
+          {({ height, width }: any) => (
+            <List
+              height={height}
+              itemCount={filteredMessages.length}
+              itemSize={130}
+              width={width}
+              className="scrollbar-hide"
+            >
+              {Row}
+            </List>
+          )}
+        </AutoSizer>
+      </div>
 
-            return (
-              <motion.div 
-                key={msg.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={`flex w-full ${isUser ? "justify-end" : "justify-start"}`}
-              >
-                {!isUser && (
-                  <div 
-                    className={`w-8 h-8 rounded-lg flex items-center justify-center text-white mr-3 mt-1 shadow-md shrink-0 transition-all ${isProcessing && idx === (conversationData.messages?.length || 0) - 1 ? "ring-2 ring-white ring-offset-2 ring-offset-background scale-110 shadow-[0_0_15px_white]" : ""}`} 
-                    style={{ backgroundColor: agentColor as any }}
-                  >
-                    <Bot className="w-5 h-5" />
-                  </div>
-                )}
-                <div className={`relative max-w-[80%] group`}>
-                   <div className="flex items-baseline gap-2 mb-1 px-1">
-                      <div className="flex flex-col">
-                        <span className={`text-xs font-bold ${isUser ? "text-primary ml-auto" : ""}`} style={{ color: !isUser ? agentColor : undefined }}>
-                          {isUser ? "You" : agent?.name || "Unknown Agent"}
-                        </span>
-                        {!isUser && agent?.role && (
-                          <span className="text-[9px] text-muted-foreground font-medium uppercase tracking-tighter">
-                            {agent.role}
-                          </span>
-                        )}
-                      </div>
-                      {!isUser && <span className="text-[10px] text-muted-foreground uppercase self-start mt-0.5">{msg.role}</span>}
-                   </div>
-                   
-                   <div className="p-4 rounded-2xl shadow-md backdrop-blur-sm border transition-all bg-primary/10 border-primary/20 text-foreground rounded-tr-sm text-[12px]">
-                      {msg.fileUrl && (
-                        <div className="mb-3 p-2 bg-black/20 rounded-lg border border-white/10 flex items-center gap-3">
-                          {msg.fileType?.startsWith("image/") ? (
-                            <img src={msg.fileUrl} alt={msg.fileName || "Uploaded"} className="max-w-full max-h-48 rounded object-contain" />
-                          ) : (
-                            <>
-                              <FileText className="h-8 w-8 text-primary" />
-                              <div className="flex flex-col">
-                                <span className="text-xs font-medium truncate max-w-[200px]">{msg.fileName}</span>
-                                <span className="text-[10px] text-muted-foreground uppercase">{msg.fileType}</span>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      )}
-                      {msg.content}
-                   </div>
-
-                   {/* Actions */}
-                   <div className={`absolute top-2 ${isUser ? "-left-10" : "-right-10"} opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1`}>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-white/10 rounded-full" onClick={() => setRewriteModal({ id: msg.id, content: msg.content })}>
-                        <Edit2 className="h-3.5 w-3.5 text-muted-foreground" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-white/10 rounded-full" onClick={() => runTurn.mutate({ conversationId, isRewrite: true, messageIdToRewrite: msg.id })}>
-                         <RotateCw className="h-3.5 w-3.5 text-muted-foreground" />
-                      </Button>
-                   </div>
-                </div>
-              </motion.div>
-            );
-          })}
-        </AnimatePresence>
-        
-        {runTurn.isPending && (
+      {runTurn.isPending && (
+        <div className="px-6 py-2">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex w-full justify-start">
             <div className="w-8 h-8 rounded-lg bg-white/10 mr-3 animate-pulse" />
             <div className="bg-card/50 p-4 rounded-2xl rounded-tl-sm border border-white/5 flex gap-1 items-center h-12">
@@ -400,9 +422,8 @@ export function ChatInterface({ conversationId }: ChatInterfaceProps) {
                <div className="w-2 h-2 bg-primary/50 rounded-full typing-dot" />
             </div>
           </motion.div>
-        )}
-        <div className="h-4" /> {/* Spacer */}
-      </div>
+        </div>
+      )}
       {/* Input Area */}
       <div className="p-4 bg-background border-t border-white/5 text-[14px]">
         <form onSubmit={handleSubmit} className="flex flex-col gap-3 max-w-4xl mx-auto">
